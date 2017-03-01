@@ -77,7 +77,7 @@ func SwapAudit(f LogFunc) LogFunc {
 
 func log(fp **LogFunc, keyvals []interface{}) error {
 	// grim
-	fptr := (*unsafe.Pointer)(unsafe.Pointer(&infoFunc))
+	fptr := (*unsafe.Pointer)(unsafe.Pointer(fp))
 	f := (*LogFunc)(atomic.LoadPointer(fptr))
 	if f == nil {
 		return nil

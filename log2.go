@@ -46,7 +46,7 @@ var (
 type LogFunc func(...interface{}) error
 
 func Debug(keyvals ...interface{}) error {
-	return log(&infoFunc, keyvals)
+	return log(&debugFunc, keyvals)
 }
 
 func SwapDebug(f LogFunc) LogFunc {

@@ -1,32 +1,43 @@
 // Log2 defines Debug, Info, Warn, Error and Audit structured logging
 // functions whose implementations may be swapped atomically.
 //
-// Main purpose: provide a standard way for all go packages to link to
-// logging functions without restricting what actual logging
-// implementation an app chooses to use (other than imposing specific
-// levels & structured logging).  If all packages used something like
-// this, it would be easy for an app to configure logging, including
-// changing during runtime (e.g. in response to SIG_USR1 & SIG_USR2).
+// Main purpose: provide a standard way for go packages to link to
+// logging functions without restricting which logging implementation
+// an app chooses to use (other than imposing specific levels &
+// structured logging).  If all packages used something like this, it
+// would be easy for an app to configure logging, including changing
+// it during runtime (e.g. in response to SIG_USR1 & SIG_USR2).
 //
-// Does not support pkg-specific logging level based muting like log4j
-// unless a "pkg" param convention is used to logging calls.
+// Log2 does not support pkg-specific, logging-level-based muting like
+// log4j unless a "pkg" param convention is used with logging calls.
 //
 // Debug, Info, Error, etc logging functions take alternating key and
 // value pairs as arguments as per go-kit/kit/log. Keys will be
 // converted string with fmt.Sprint(). If given an uneven number of
 // keyvals, the first keyval will be assumed to be a value and will be
 // given the key "msg" implicitly (simplify migration at cost of
-// alloc)
+// alloc).
 //
 // The SwapDebug and other swap functions are intended to be used by
 // the app writer (e.g. in main()) to configure how the Debug, Info
 // etc functions behave. For example, it might make Error() and Warn()
 // go to stdout in a simple text format while at the same time
-// Error(), Warn() and Info() got to to a centralized log server over
-// syslog/UDP in JSON format.  Audit() could be configured to write
-// JSON to a Kafka topic partion selected by hashing the "id" keyval
-// key. Swap functions make it easy to respond to SIG_HUP for logrotate
-// type behvaiour (e.g. close current logging file and reopen it).
+// Error(), Warn() and Info() also go to to a centralized log server
+// over syslog/UDP in JSON format.  Audit() could be configured to
+// write JSON to a Kafka topic partition selected by hashing the "id"
+// keyval key. Swap functions make it possible to respond to SIG_HUP
+// for logrotate type behvaiour (e.g. close current logging file and
+// reopen it). Careful about races though: return from a swap call
+// does not mean all calls to the previously associated log function
+// have returned, especially in the audit/reliable logging case).
+//
+// Conventions on Keyvals
+//
+// - duplicate keys in a log call has undefined behaviour. Log users:
+// avoid doing this.
+//
+// - uneven len(keyvals) will have "msg" prepended as the first key so
+// it's ok to do Info("my log message")
 //
 package log2
 
@@ -43,7 +54,14 @@ var (
 	auditFunc *LogFunc
 )
 
-type LogFunc func(...interface{}) error
+// LogFunc implementations are provided by each log leve (Info,
+// etc). Errors returned may be ignored by log users.
+type LogFunc func(keyvals ...interface{}) error
+
+// SwapFunc implementations should provided for each log level so an
+// application writer may configure the behaviour of that logging
+// level.
+type SwapFunc func(next LogFunc) (prev LogFunc)
 
 func Debug(keyvals ...interface{}) error {
 	return log(&debugFunc, keyvals)

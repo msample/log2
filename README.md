@@ -78,7 +78,7 @@ func Warn(keyvals ...interface{}) error
 type LogFunc func(keyvals ...interface{}) error
 ```
 
-LogFunc implementations are provided by each log leve (Info, etc). Errors
+LogFunc implementations are provided by each log level (Info, etc). Errors
 returned may be ignored by log users.
 
 #### func  SwapAudit
@@ -117,5 +117,5 @@ func SwapWarn(f LogFunc) LogFunc
 type SwapFunc func(next LogFunc) (prev LogFunc)
 ```
 
-SwapFunc implementations should provided for each log level so an application
+SwapFunc implementations should be provided for each log level so an application
 writer may configure the behaviour of that logging level.

@@ -54,12 +54,12 @@ var (
 	auditFunc *LogFunc
 )
 
-// LogFunc implementations are provided by each log leve (Info,
+// LogFunc implementations are provided by each log level (Info,
 // etc). Errors returned may be ignored by log users.
 type LogFunc func(keyvals ...interface{}) error
 
-// SwapFunc implementations should provided for each log level so an
-// application writer may configure the behaviour of that logging
+// SwapFunc implementations should be provided for each log level so
+// an application writer may configure the behaviour of that logging
 // level.
 type SwapFunc func(next LogFunc) (prev LogFunc)
 

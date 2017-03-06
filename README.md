@@ -42,6 +42,17 @@ do Info("my log message")
 
 ## Usage
 
+```go
+const (
+	DEBUG = iota
+	INFO
+	WARN
+	ERROR
+	AUDIT
+	HIGHEST = AUDIT // valid levels always start at 0 and end with HIGHEST, contigous
+)
+```
+
 #### func  Audit
 
 ```go
@@ -66,10 +77,29 @@ func Error(keyvals ...interface{}) error
 func Info(keyvals ...interface{}) error
 ```
 
+#### func  NopLog
+
+```go
+func NopLog(keyvals ...interface{}) error
+```
+
 #### func  Warn
 
 ```go
 func Warn(keyvals ...interface{}) error
+```
+
+#### type Level
+
+```go
+type Level int
+```
+
+
+#### func (Level) String
+
+```go
+func (i Level) String() string
 ```
 
 #### type LogFunc
@@ -78,8 +108,15 @@ func Warn(keyvals ...interface{}) error
 type LogFunc func(keyvals ...interface{}) error
 ```
 
-LogFunc implementations are provided by each log level (Info, etc). Errors
-returned may be ignored by log users.
+LogFunc implementations (swapable) are provided for each log level (Info, etc).
+Errors returned may be ignored by log users.
+
+#### func  Swap
+
+```go
+func Swap(level int, f LogFunc) LogFunc
+```
+Swap the logger for the given level. Intended to assist log implmentations.
 
 #### func  SwapAudit
 
@@ -117,5 +154,5 @@ func SwapWarn(f LogFunc) LogFunc
 type SwapFunc func(next LogFunc) (prev LogFunc)
 ```
 
-SwapFunc implementations should be provided for each log level so an application
-writer may configure the behaviour of that logging level.
+SwapFunc implementations are provided for each log level so an application
+writer may configure the behaviour each logging level.

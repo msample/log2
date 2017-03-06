@@ -46,6 +46,17 @@ import (
 	"unsafe"
 )
 
+const (
+	DEBUG = iota
+	INFO
+	WARN
+	ERROR
+	AUDIT
+	HIGHEST = AUDIT // valid levels always start at 0 and end with HIGHEST, contigous
+)
+
+type Level int
+
 var (
 	debugFunc *LogFunc
 	infoFunc  *LogFunc
@@ -54,13 +65,12 @@ var (
 	auditFunc *LogFunc
 )
 
-// LogFunc implementations are provided by each log level (Info,
-// etc). Errors returned may be ignored by log users.
+// LogFunc implementations (swapable) are provided for each log level
+// (Info, etc). Errors returned may be ignored by log users.
 type LogFunc func(keyvals ...interface{}) error
 
-// SwapFunc implementations should be provided for each log level so
-// an application writer may configure the behaviour of that logging
-// level.
+// SwapFunc implementations are provided for each log level so an
+// application writer may configure the behaviour each logging level.
 type SwapFunc func(next LogFunc) (prev LogFunc)
 
 func Debug(keyvals ...interface{}) error {
@@ -103,11 +113,29 @@ func SwapAudit(f LogFunc) LogFunc {
 	return swap(&auditFunc, f)
 }
 
+// Swap the logger for the given level. Intended to assist log implmentations.
+func Swap(level int, f LogFunc) LogFunc {
+	switch level {
+	case (DEBUG):
+		return SwapDebug(f)
+	case (INFO):
+		return SwapInfo(f)
+	case (WARN):
+		return SwapWarn(f)
+	case (ERROR):
+		return SwapError(f)
+	case (AUDIT):
+		return SwapAudit(f)
+	default:
+		return nil
+	}
+}
+
 func log(fp **LogFunc, keyvals []interface{}) error {
 	// grim
 	fptr := (*unsafe.Pointer)(unsafe.Pointer(fp))
 	f := (*LogFunc)(atomic.LoadPointer(fptr))
-	if f == nil {
+	if f == nil || *f == nil {
 		return nil
 	}
 	if len(keyvals)%2 == 0 {
@@ -120,11 +148,11 @@ func swap(fp **LogFunc, f LogFunc) LogFunc {
 	x := (*unsafe.Pointer)(unsafe.Pointer(fp))
 	rv := (*LogFunc)(atomic.SwapPointer(x, unsafe.Pointer(&f)))
 	if rv == nil {
-		return nopLog
+		return NopLog
 	}
 	return *rv
 }
 
-func nopLog(keyvals ...interface{}) error {
+func NopLog(keyvals ...interface{}) error {
 	return nil
 }

@@ -47,7 +47,7 @@ import (
 )
 
 const (
-	DEBUG = iota
+	DEBUG Level = iota
 	INFO
 	WARN
 	ERROR
@@ -114,7 +114,7 @@ func SwapAudit(f LogFunc) LogFunc {
 }
 
 // Swap the logger for the given level. Intended to assist log implmentations.
-func Swap(level int, f LogFunc) LogFunc {
+func Swap(level Level, f LogFunc) LogFunc {
 	switch level {
 	case (DEBUG):
 		return SwapDebug(f)
